@@ -7,14 +7,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
+import java.util.List;
 import java.util.Optional;
 
-@RestController
 @Controller
 @RequestMapping("/user")
 public class UserController {
@@ -29,11 +30,10 @@ public class UserController {
     }
 
     @PostMapping("/reg")
-    public String reg(@ModelAttribute("newUser") @Valid User user, BindingResult bindingResult, Model model,
-                      @RequestParam("name") String name,
-                      @RequestParam("username") String username,
-                      @RequestParam("password") String password) {
-            User newUser = new User(name, username, password);
+    public String reg(@ModelAttribute("newUser") @Valid User user, BindingResult bindingResult, Model model) {
+        if (bindingResult.hasErrors()) {
+            return "reg";
+        }
             userService.save(user);
             return "redirect:/";
         }
@@ -47,25 +47,23 @@ public class UserController {
 
   @PostMapping("/login")
   public String login(@ModelAttribute("newLogin") @Valid LoginUserDto loginUserDto,
-                      @SessionAttribute("user") User user,
                       BindingResult bindingResult,
                       HttpSession session,
-                      ModelAndView modelAndView,
-                      @RequestParam("username") String username,
-                      @RequestParam("password") String password) {
-      Optional<User> byUsername = userService.findByUsername(username);
+                      Model model) {
+      Optional<User> byUsername = userService.findByUsername(loginUserDto);
+      if (bindingResult.hasErrors()) {
+          setValidationErrors(bindingResult, model);
+          model.addAttribute("newUser", loginUserDto);
+          return "login";
+      }
       if (byUsername.isPresent()) {
-          user = byUsername.get();
-          if (user.getPassword().equals(password)) {
-              session.setAttribute("user", user);
-              return "redirect:/";
-          } else {
-              bindingResult.rejectValue("password", "error.password", "Wrong password!");
-              return "forward:/pages/login.jsp";
-          }
-      } else {
-          bindingResult.rejectValue("username", "error.username", "User not found!");
-          return "forward:/pages/login.jsp";
+          User user = byUsername.get();
+          session.setAttribute("user", user);
+          return "redirect:/";
+      }
+      else {
+          model.addAttribute("errorLogin", "Wrong username or password");
+          return "login";
       }
   }
 
@@ -75,6 +73,13 @@ public class UserController {
       httpSession.invalidate();
       return "redirect:/";
   }
+
+    private void setValidationErrors(BindingResult bindingResult, Model model) {
+        List<FieldError> fieldErrors = bindingResult.getFieldErrors();
+        for (FieldError fieldError : fieldErrors) {
+            model.addAttribute(fieldError.getField(), fieldError.getDefaultMessage());
+        }
+    }
 
 
 }

@@ -26,8 +26,7 @@ public class OperationController {
 
     @Autowired
     private OperationService operationService;
-    private CalculatorValidator calculatorValidator;
-    private OperationFactory operationFactory;
+
 
     @GetMapping
     public String calc() {
@@ -36,35 +35,17 @@ public class OperationController {
 
     @PostMapping("/calc")
     public String calc(@Valid Operation operation, BindingResult bindingResult,
-                       @RequestParam("num1") String num1,
-                       @RequestParam("num2") String num2,
-                       @RequestParam("type") String operationType,
                        HttpSession session,
                        Model model) {
-        if (!calculatorValidator.isValidDigits(num1)) {
-            model.addAttribute("error","Invalid num1!");
-            return "forward:/pages/calc.jsp";
-        }
-
-        double sNum1 = Double.parseDouble(num1);
-
-        if (!calculatorValidator.isValidDigits(num2)) {
-            model.addAttribute("error","Invalid num2!");
-            return "forward:/pages/calc.jsp";
-        }
-
-        double sNum2 = Double.parseDouble(num2);
 
         OperationType opType = OperationType.valueOf(operationType.toUpperCase());
 
         User user = (User) session.getAttribute("user");
 
-        CalculatorOperation instance = operationFactory.getInstance(sNum1, sNum2, opType, user);
-
-        double result = operationService.calculate(instance);
+        double result = operationService.calculate(operation);
 
         model.addAttribute("result", result);
-        return "forward:/pages/calc.jsp";
+        return "calc";
     }
 
 
@@ -73,7 +54,7 @@ public class OperationController {
         User user = (User) session.getAttribute("user");
         List<CalculatorOperation> operationList = operationService.findAllByUsername(user.getUsername());
         model.addAttribute("operationList", operationList);
-        return "forward:/pages/history.jsp";
+        return "history";
     }
 }
 

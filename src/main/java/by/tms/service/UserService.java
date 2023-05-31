@@ -1,5 +1,6 @@
 package by.tms.service;
 
+import by.tms.dto.LoginUserDto;
 import by.tms.entity.User;
 import org.springframework.stereotype.Service;
 
@@ -16,9 +17,9 @@ public class UserService {
         userList.add(user);
     }
 
-    public Optional<User> findByUsername(String username) {
+    public Optional<User> findByUsername(LoginUserDto loginUserDto) {
         for (User user : userList) {
-            if (user.getUsername().equals(username)) {
+            if (user.getUsername().equals(loginUserDto.getUsername())) {
                 return Optional.of(user);
             }
         }
